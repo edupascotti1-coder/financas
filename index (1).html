@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Minhas Despesas</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<style>
+:root{--bg:#f6f5f1;--card:#fff;--tx:#1d1d1b;--mu:#77756e;--ac:#0f766e;--bd:#e4e2da;--rd:#b42318}
+@media (prefers-color-scheme:dark){:root{--bg:#161615;--card:#212120;--tx:#f0efe9;--mu:#9b9990;--ac:#2dd4bf;--bd:#333331;--rd:#f97066}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:520px;margin:0 auto;padding:16px 16px 40px}
+h1{font-size:20px;margin:0}
+h2{font-size:15px;margin:18px 0 8px;color:var(--mu)}
+.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.tabs{display:flex;gap:6px;margin-bottom:14px}
+.tabs button{flex:1}
+.tabs button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px}
+.tot{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.tot small,.mu{color:var(--mu)}
+.tot small{display:block;font-size:13px}
+.tot b{font-size:22px}
+input,select,button{font:inherit;color:var(--tx);background:var(--bg);border:1px solid var(--bd);border-radius:8px;padding:10px;min-width:0;width:100%;cursor:pointer}
+input{cursor:text}
+label{font-size:12px;color:var(--mu);display:block;margin-bottom:2px}
+.g{display:grid;gap:8px}
+.r{display:flex;gap:8px}
+.r>*{flex:1}
+button.p{background:var(--ac);color:#fff;border:0;font-weight:600}
+button.s{width:auto;padding:6px 10px;font-size:14px}
+.it{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--bd)}
+.it:last-child{border:0}
+.it div{flex:1;min-width:0}
+.it span{color:var(--mu);font-size:13px;display:block}
+.it b{white-space:nowrap}
+.x{width:auto;padding:2px 9px;border:0;background:none;color:var(--rd);font-size:18px}
+.mu{text-align:center;padding:8px 0;margin:0}
+.err{color:var(--rd);font-size:14px;min-height:18px}
+.hide{display:none}
+</style>
+</head>
+<body>
+<main>
+
+<!-- LOGIN -->
+<section id="auth" class="hide">
+  <h1>💸 Minhas Despesas</h1>
+  <h2>Entre para acessar seus dados</h2>
+  <div class="card g">
+    <input id="em" type="email" placeholder="E-mail" autocomplete="email">
+    <input id="pw" type="password" placeholder="Senha (mín. 6 caracteres)" autocomplete="current-password">
+    <div class="r"><button class="p" id="in">Entrar</button><button id="up">Criar conta</button></div>
+    <div class="err" id="ae"></div>
+  </div>
+</section>
+
+<!-- APP -->
+<section id="app" class="hide">
+  <div class="top"><h1>💸 Minhas Despesas</h1><button class="s" id="out">Sair</button></div>
+  <div class="tabs"><button id="t1" class="on">Lançar</button><button id="t2">Relatórios</button></div>
+
+  <div id="p1">
+    <div class="tot">
+      <div class="card"><small>Hoje</small><b id="td">R$ 0,00</b></div>
+      <div class="card"><small id="ml">Mês</small><b id="tm">R$ 0,00</b></div>
+    </div>
+    <div class="card g">
+      <div class="r"><input id="v" type="number" inputmode="decimal" step="0.01" min="0" placeholder="Valor (R$)"><input id="d" type="date"></div>
+      <select id="c"></select>
+      <input id="n" type="text" placeholder="Descrição (opcional)">
+      <button class="p" id="add">Adicionar</button>
+      <div class="err" id="e1"></div>
+    </div>
+    <h2>Lançamentos de hoje</h2>
+    <div class="card" id="list"></div>
+  </div>
+
+  <div id="p2" class="hide">
+    <div class="card g">
+      <div class="r"><div><label>De</label><input id="f1" type="date"></div><div><label>Até</label><input id="f2" type="date"></div></div>
+      <div><label>Tipo de despesa</label><select id="fc"></select></div>
+      <div class="r"><div><label>Valor mínimo</label><input id="v1" type="number" inputmode="decimal" step="0.01" min="0"></div><div><label>Valor máximo</label><input id="v2" type="number" inputmode="decimal" step="0.01" min="0"></div></div>
+      <div class="r"><button class="p" id="go">Filtrar</button><button id="clr">Limpar</button></div>
+      <div class="err" id="e2"></div>
+    </div>
+    <div class="tot" style="margin-top:14px">
+      <div class="card"><small>Total filtrado</small><b id="rt">R$ 0,00</b></div>
+      <div class="card"><small>Lançamentos</small><b id="rn">0</b></div>
+    </div>
+    <button id="csv" style="margin-bottom:12px">⬇ Exportar CSV (abre no Excel)</button>
+    <h2>Por tipo</h2>
+    <div class="card" id="cat"></div>
+    <h2>Lançamentos</h2>
+    <div class="card" id="rl"></div>
+  </div>
+</section>
+
+</main>
+<script>
+/* ====== CONFIGURE AQUI (Firebase > Configurações do projeto > Seus apps > Web) ====== */
+var firebaseConfig = {
+  apiKey: "AIzaSyAVtwwmGb97cWOkgZEZ5wdMfO7JBYYqjrA",
+  authDomain: "financas-faaac.firebaseapp.com",
+  projectId: "financas-faaac",
+  storageBucket: "financas-faaac.firebasestorage.app",
+  messagingSenderId: "709336005932",
+  appId: "1:709336005932:web:1f94037b3bd81100104089",
+  measurementId: "G-MDM9DPNSHV"
+};
+/* ======================================================================================= */
+
+var CATS=["Alimentação","Transporte","Moradia","Lazer","Saúde","Compras","Outros"];
+var $=function(i){return document.getElementById(i)};
+firebase.initializeApp(firebaseConfig);
+var auth=firebase.auth(),db=firebase.firestore(),uid=null,repRows=[];
+function col(){return db.collection("users").doc(uid).collection("despesas")}
+function rows(snap){return snap.docs.map(function(d){var o=d.data();o.id=d.id;return o})}
+
+function two(n){return String(n).padStart(2,"0")}
+function today(){var t=new Date();return t.getFullYear()+"-"+two(t.getMonth()+1)+"-"+two(t.getDate())}
+function brl(x){return Number(x).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}
+function fdate(s){var p=s.split("-");return p[2]+"/"+p[1]+"/"+p[0]}
+function opts(sel,all){sel.textContent="";if(all){var o=document.createElement("option");o.value="";o.textContent="Todos";sel.appendChild(o)}CATS.forEach(function(c){var o=document.createElement("option");o.value=o.textContent=c;sel.appendChild(o)})}
+opts($("c"));opts($("fc"),true);
+$("d").value=today();
+
+/* ---- Auth ---- */
+function showAuth(on){$("auth").classList.toggle("hide",!on);$("app").classList.toggle("hide",on)}
+function authCall(fn){
+  $("ae").textContent="";
+  fn.call(auth,$("em").value.trim(),$("pw").value).catch(function(e){$("ae").textContent=e.message});
+}
+$("in").onclick=function(){authCall(auth.signInWithEmailAndPassword)};
+$("up").onclick=function(){authCall(auth.createUserWithEmailAndPassword)};
+$("out").onclick=function(){auth.signOut()};
+auth.onAuthStateChanged(function(u){uid=u?u.uid:null;showAuth(!u);if(u)loadHome()});
+
+/* ---- Tabs ---- */
+function tab(n){$("p1").classList.toggle("hide",n!==1);$("p2").classList.toggle("hide",n!==2);$("t1").classList.toggle("on",n===1);$("t2").classList.toggle("on",n===2);if(n===2)runReport();else loadHome()}
+$("t1").onclick=function(){tab(1)};$("t2").onclick=function(){tab(2)};
+
+/* ---- Lançar ---- */
+function loadHome(){
+  var t=today(),m=t.slice(0,7);
+  col().where("data",">=",m+"-01").get().then(function(snap){
+    var r=rows(snap),td=0,tm=0,L=$("list");L.textContent="";
+    var today_=r.filter(function(i){return i.data===t}).sort(function(a,b){return (b.criado||0)-(a.criado||0)});
+    r.forEach(function(i){tm+=+i.valor;if(i.data===t)td+=+i.valor});
+    $("td").textContent=brl(td);$("tm").textContent=brl(tm);
+    $("ml").textContent="Mês ("+new Date().toLocaleDateString("pt-BR",{month:"long"})+")";
+    if(!today_.length){var p=document.createElement("p");p.className="mu";p.textContent="Nenhum gasto hoje ainda.";L.appendChild(p);return}
+    today_.forEach(function(i){
+      var e=document.createElement("div");e.className="it";
+      var a=document.createElement("div"),n=document.createElement("div"),s=document.createElement("span");
+      n.textContent=i.descricao||i.categoria;s.textContent=i.categoria;a.appendChild(n);a.appendChild(s);
+      var b=document.createElement("b");b.textContent=brl(i.valor);
+      var x=document.createElement("button");x.className="x";x.textContent="×";x.title="Excluir";
+      x.onclick=function(){col().doc(i.id).delete().then(loadHome)};
+      e.appendChild(a);e.appendChild(b);e.appendChild(x);L.appendChild(e);
+    });
+  }).catch(function(e){$("e1").textContent=e.message});
+}
+$("add").onclick=function(){
+  var v=parseFloat($("v").value);$("e1").textContent="";
+  if(!(v>0)){$("v").focus();return}
+  col().add({valor:v,data:$("d").value||today(),categoria:$("c").value,descricao:$("n").value.trim(),criado:Date.now()}).then(function(){
+    $("v").value="";$("n").value="";$("v").focus();loadHome();
+  }).catch(function(e){$("e1").textContent=e.message});
+};
+
+/* ---- Relatórios (data no servidor; tipo e valor no navegador, sem precisar de índices) ---- */
+function runReport(){
+  $("e2").textContent="";
+  var q=col();
+  if($("f1").value)q=q.where("data",">=",$("f1").value);
+  if($("f2").value)q=q.where("data","<=",$("f2").value);
+  q.orderBy("data","desc").get().then(function(snap){
+    var c=$("fc").value,mn=parseFloat($("v1").value),mx=parseFloat($("v2").value);
+    repRows=rows(snap).filter(function(i){
+      return (!c||i.categoria===c)&&(isNaN(mn)||i.valor>=mn)&&(isNaN(mx)||i.valor<=mx);
+    });
+    drawReport();
+  }).catch(function(e){$("e2").textContent=e.message});
+}
+function drawReport(){
+  var tot=0,by={},L=$("rl"),C=$("cat");L.textContent="";C.textContent="";
+  repRows.forEach(function(i){tot+=+i.valor;by[i.categoria]=(by[i.categoria]||0)+ +i.valor});
+  $("rt").textContent=brl(tot);$("rn").textContent=repRows.length;
+  function line(a,sub,val){
+    var e=document.createElement("div");e.className="it";
+    var d=document.createElement("div"),n=document.createElement("div");n.textContent=a;d.appendChild(n);
+    if(sub){var s=document.createElement("span");s.textContent=sub;d.appendChild(s)}
+    var b=document.createElement("b");b.textContent=brl(val);e.appendChild(d);e.appendChild(b);return e;
+  }
+  var ks=Object.keys(by).sort(function(a,b){return by[b]-by[a]});
+  if(!ks.length){[C,L].forEach(function(el){var p=document.createElement("p");p.className="mu";p.textContent="Nada encontrado.";el.appendChild(p)});return}
+  ks.forEach(function(k){C.appendChild(line(k,"",by[k]))});
+  repRows.forEach(function(i){L.appendChild(line(i.descricao||i.categoria,fdate(i.data)+" · "+i.categoria,i.valor))});
+}
+$("go").onclick=runReport;
+$("clr").onclick=function(){["f1","f2","fc","v1","v2"].forEach(function(i){$(i).value=""});runReport()};
+$("csv").onclick=function(){
+  if(!repRows.length)return;
+  function q(s){return '"'+String(s==null?"":s).replace(/"/g,'""')+'"'}
+  var out=["Data;Categoria;Descrição;Valor"];
+  repRows.forEach(function(i){out.push([fdate(i.data),q(i.categoria),q(i.descricao),String(i.valor).replace(".",",")].join(";"))});
+  var blob=new Blob(["\ufeff"+out.join("\r\n")],{type:"text/csv;charset=utf-8"});
+  var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="despesas-"+today()+".csv";
+  document.body.appendChild(a);a.click();a.remove();
+};
+</script>
+</body>
+</html>
