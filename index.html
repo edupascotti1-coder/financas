@@ -103,7 +103,7 @@ button.s{width:auto;padding:6px 10px;font-size:14px}
 <script>
 /* ====== CONFIGURE AQUI (Firebase > Configurações do projeto > Seus apps > Web) ====== */
 var firebaseConfig = {
-  apiKey: "AIzaSyAVtwwmGb97cWOkgZEZ5wdMfO7JBYYqjrA",
+   apiKey: "AIzaSyAVtwwmGb97cWOkgZEZ5wdMfO7JBYYqjrA",
   authDomain: "financas-faaac.firebaseapp.com",
   projectId: "financas-faaac",
   storageBucket: "financas-faaac.firebasestorage.app",
@@ -111,6 +111,10 @@ var firebaseConfig = {
   appId: "1:709336005932:web:1f94037b3bd81100104089",
   measurementId: "G-MDM9DPNSHV"
 };
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
 /* ======================================================================================= */
 
 var CATS=["Alimentação","Transporte","Moradia","Lazer","Saúde","Compras","Outros"];
